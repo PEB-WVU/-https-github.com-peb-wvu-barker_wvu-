@@ -279,7 +279,7 @@
         </div>
 
         <div class="content">
-            <div class="upload-section" onclick="document.getElementById('imageInput').click()">
+            <div class="upload-section" id="uploadSection">
                 <input type="file" id="imageInput" accept="image/*">
                 <label class="upload-label" for="imageInput">Choose Image</label>
                 <div class="upload-info">
@@ -293,7 +293,7 @@
                 <div class="setting-group">
                     <div class="setting-item">
                         <label for="threshold">Edge Threshold:</label>
-                        <input type="range" id="threshold" min="50" max="200" value="128" oninput="document.getElementById('thresholdValue').textContent = this.value">
+                        <input type="range" id="threshold" min="50" max="200" value="128">
                         <span id="thresholdValue">128</span>
                     </div>
                     <div class="setting-item">
@@ -333,10 +333,10 @@
             </div>
 
             <div class="actions">
-                <button class="btn btn-primary" id="generateBtn" onclick="generateGCode()" disabled>
+                <button class="btn btn-primary" id="generateBtn" disabled>
                     Generate G-Code
                 </button>
-                <button class="btn btn-secondary" id="downloadBtn" onclick="downloadGCode()" disabled>
+                <button class="btn btn-secondary" id="downloadBtn" disabled>
                     Download G-Code File
                 </button>
             </div>
@@ -374,8 +374,31 @@
     </div>
 
     <script>
+        // Constants
+        const EDGE_DETECTION_THRESHOLD = 100;
+        const TIME_ESTIMATION_FACTOR = 0.1; // seconds per command
+        
         let imageData = null;
         let generatedGCode = '';
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Upload section click handler
+            document.getElementById('uploadSection').addEventListener('click', function() {
+                document.getElementById('imageInput').click();
+            });
+            
+            // Threshold slider handler
+            document.getElementById('threshold').addEventListener('input', function() {
+                document.getElementById('thresholdValue').textContent = this.value;
+            });
+            
+            // Generate button handler
+            document.getElementById('generateBtn').addEventListener('click', generateGCode);
+            
+            // Download button handler
+            document.getElementById('downloadBtn').addEventListener('click', downloadGCode);
+        });
 
         // Image upload handler
         document.getElementById('imageInput').addEventListener('change', function(e) {
@@ -468,7 +491,7 @@
                     );
                     
                     const magnitude = Math.sqrt(gx * gx + gy * gy);
-                    const value = magnitude > 100 ? 255 : 0;
+                    const value = magnitude > EDGE_DETECTION_THRESHOLD ? 255 : 0;
                     
                     edges[idx] = value;
                     edges[idx + 1] = value;
@@ -670,7 +693,7 @@
                 // Update stats
                 const lines = generatedGCode.split('\n').length;
                 const size = new Blob([generatedGCode]).size;
-                const estimatedTime = Math.round(result.commandCount * 0.1); // Rough estimate
+                const estimatedTime = Math.round(result.commandCount * TIME_ESTIMATION_FACTOR);
                 
                 document.getElementById('statCommands').textContent = result.commandCount;
                 document.getElementById('statTime').textContent = estimatedTime + 's';
