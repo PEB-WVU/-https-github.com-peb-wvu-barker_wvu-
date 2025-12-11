@@ -260,7 +260,7 @@
                     correctLevel: QRCode.CorrectLevel.H
                 });
             } catch (error) {
-                qrCodeDiv.innerHTML = '<p class="error">⚠️ Failed to generate QR code. Please try again.</p>';
+                qrCodeDiv.innerHTML = `<p class="error">⚠️ Failed to generate QR code. ${error.message || 'Please check your input and try again.'}</p>`;
                 console.error('QR Code generation error:', error);
                 return;
             }
@@ -282,13 +282,27 @@
         }
 
         function analyzeInput(input) {
-            // Check if input is a URL
-            const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+            // Check if input is a URL using more robust validation
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             const phonePattern = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
 
-            if (urlPattern.test(input)) {
-                const fullUrl = input.startsWith('http') ? input : `https://${input}`;
+            // Try URL validation first
+            let isUrl = false;
+            let fullUrl = '';
+            try {
+                // Try to create a URL object - this is more robust than regex
+                const testUrl = input.startsWith('http') ? input : `https://${input}`;
+                const urlObj = new URL(testUrl);
+                // Check if it has a valid domain structure
+                if (urlObj.hostname.includes('.')) {
+                    isUrl = true;
+                    fullUrl = testUrl;
+                }
+            } catch (e) {
+                // Not a valid URL, continue with other checks
+            }
+
+            if (isUrl) {
                 return {
                     type: 'Website URL',
                     description: `This QR code will direct users to: ${fullUrl}`
