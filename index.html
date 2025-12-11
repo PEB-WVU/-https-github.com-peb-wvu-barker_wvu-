@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <!-- QR Code generation library - embedded locally for offline use -->
+    <script src="qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        #userInput {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        #userInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #clearBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        #result {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #qrCode {
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+
+        #qrCode img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        #summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        #summary h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        #summary p {
+            color: #555;
+            line-height: 1.6;
+            font-size: 1.05em;
+            word-wrap: break-word;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .info-box p {
+            color: #333;
+            font-size: 0.95em;
+            margin: 5px 0;
+        }
+
+        .error {
+            color: #f5576c;
+            text-align: center;
+            padding: 15px;
+            background: #ffe6e6;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔲 QR Code Generator</h1>
+        <p class="subtitle">Create QR codes instantly - Enter any text, URL, or data below</p>
+        
+        <div class="input-group">
+            <label for="userInput">Enter your text or URL:</label>
+            <input 
+                type="text" 
+                id="userInput" 
+                placeholder="e.g., https://www.example.com or Hello World!"
+                aria-label="Text or URL input for QR code generation"
+            >
+        </div>
+
+        <div class="button-group">
+            <button id="generateBtn" onclick="generateQRCode()">Generate QR Code</button>
+            <button id="clearBtn" onclick="clearResult()">Clear</button>
+        </div>
+
+        <div id="result" class="hidden">
+            <div id="qrCode"></div>
+            <div id="summary"></div>
+        </div>
+    </div>
+
+    <script>
+        // Listen for Enter key on input field
+        document.getElementById('userInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                generateQRCode();
+            }
+        });
+
+        function generateQRCode() {
+            const input = document.getElementById('userInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            const qrCodeDiv = document.getElementById('qrCode');
+            const summaryDiv = document.getElementById('summary');
+
+            // Clear previous results
+            qrCodeDiv.innerHTML = '';
+            summaryDiv.innerHTML = '';
+
+            // Validate input
+            if (!input) {
+                summaryDiv.innerHTML = '<p class="error">⚠️ Please enter some text or a URL to generate a QR code.</p>';
+                resultDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Determine what type of data was entered
+            const dataType = analyzeInput(input);
+
+            // Create a container div for the QR code
+            const qrContainer = document.createElement('div');
+            qrContainer.style.padding = '20px';
+            qrContainer.style.backgroundColor = 'white';
+            qrContainer.style.display = 'inline-block';
+            qrContainer.style.borderRadius = '10px';
+            qrCodeDiv.appendChild(qrContainer);
+
+            // Generate QR code using QRCode.js library
+            try {
+                new QRCode(qrContainer, {
+                    text: input,
+                    width: 256,
+                    height: 256,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch (error) {
+                qrCodeDiv.innerHTML = `<p class="error">⚠️ Failed to generate QR code. ${error.message || 'Please check your input and try again.'}</p>`;
+                console.error('QR Code generation error:', error);
+                return;
+            }
+
+            // Create summary
+            summaryDiv.innerHTML = `
+                <h3>📋 QR Code Summary</h3>
+                <p><strong>Type:</strong> ${dataType.type}</p>
+                <p><strong>Content:</strong> ${escapeHtml(input)}</p>
+                <p><strong>Description:</strong> ${dataType.description}</p>
+                <div class="info-box">
+                    <p><strong>💡 How to use:</strong> Scan this QR code with any smartphone camera or QR code reader app to access the content.</p>
+                    <p><strong>📥 Tip:</strong> Right-click on the QR code and select "Save image as..." to download it.</p>
+                </div>
+            `;
+
+            // Show result
+            resultDiv.classList.remove('hidden');
+        }
+
+        function analyzeInput(input) {
+            // Check if input is a URL using more robust validation
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const phonePattern = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
+
+            // Try URL validation first
+            let isUrl = false;
+            let fullUrl = '';
+            try {
+                // Try to create a URL object - this is more robust than regex
+                const testUrl = input.startsWith('http') ? input : `https://${input}`;
+                const urlObj = new URL(testUrl);
+                // Check if it has a valid domain structure
+                if (urlObj.hostname.includes('.')) {
+                    isUrl = true;
+                    fullUrl = testUrl;
+                }
+            } catch (e) {
+                // Not a valid URL, continue with other checks
+            }
+
+            if (isUrl) {
+                return {
+                    type: 'Website URL',
+                    description: `This QR code will direct users to: ${fullUrl}`
+                };
+            } else if (emailPattern.test(input)) {
+                return {
+                    type: 'Email Address',
+                    description: `This QR code contains an email address. Scanning it may open an email client to compose a message to: ${input}`
+                };
+            } else if (phonePattern.test(input)) {
+                return {
+                    type: 'Phone Number',
+                    description: `This QR code contains a phone number. Scanning it may allow users to call: ${input}`
+                };
+            } else if (input.startsWith('BEGIN:VCARD')) {
+                return {
+                    type: 'Contact Information (vCard)',
+                    description: 'This QR code contains contact information that can be saved to a phone\'s address book.'
+                };
+            } else if (input.startsWith('WIFI:')) {
+                return {
+                    type: 'WiFi Credentials',
+                    description: 'This QR code contains WiFi network credentials for easy connection.'
+                };
+            } else {
+                return {
+                    type: 'Plain Text',
+                    description: `This QR code contains plain text. Scanning it will display: "${input}"`
+                };
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function clearResult() {
+            document.getElementById('userInput').value = '';
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('qrCode').innerHTML = '';
+            document.getElementById('summary').innerHTML = '';
+            document.getElementById('userInput').focus();
+        }
+    </script>
+</body>
+</html>
